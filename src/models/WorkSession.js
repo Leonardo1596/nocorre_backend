@@ -26,8 +26,26 @@ const workSessionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["ACTIVE", "FINISHED"],
+      enum: ["ACTIVE", "PAUSED", "FINISHED"],
       default: "ACTIVE"
+    },
+
+    pauses: [
+      {
+        startedAt: {
+          type: Date,
+          required: true
+        },
+        endedAt: {
+          type: Date,
+          default: null
+        }
+      }
+    ],
+
+    pausedDurationMs: {
+      type: Number,
+      default: 0
     },
 
     grossAmount: {

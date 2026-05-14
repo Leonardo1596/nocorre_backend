@@ -54,6 +54,73 @@ export async function startWorkSession(
   }
 }
 
+export async function pauseWorkSession(req, res) {
+  const { id } = req.params;
+
+  const session =
+    await WorkSession.findById(id);
+
+  if (!session) {
+    return res.status(404).json({
+      message: "Session not found"
+    });
+  }
+
+  if (session.status !== "ACTIVE") {
+    return res.status(400).json({
+      message: "Session is not active"
+    });
+  }
+
+  session.status = "PAUSED";
+
+  session.pauses.push({
+    startedAt: new Date()
+  });
+
+  await session.save();
+
+  return res.json(session);
+}
+
+export async function resumeWorkSession(req, res) {
+  const { id } = req.params;
+
+  const session =
+    await WorkSession.findById(id);
+
+  if (!session) {
+    return res.status(404).json({
+      message: "Session not found"
+    });
+  }
+
+  if (session.status !== "PAUSED") {
+    return res.status(400).json({
+      message: "Session is not paused"
+    });
+  }
+
+  const currentPause =
+    session.pauses[
+    session.pauses.length - 1
+    ];
+
+  currentPause.endedAt = new Date();
+
+  const pauseMs =
+    new Date(currentPause.endedAt) -
+    new Date(currentPause.startedAt);
+
+  session.pausedDurationMs += pauseMs;
+
+  session.status = "ACTIVE";
+
+  await session.save();
+
+  return res.json(session);
+}
+
 export async function finishWorkSession(req, res) {
   try {
     const { id } = req.params;

@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import {
   startWorkSession,
+  pauseWorkSession,
+  resumeWorkSession,
   finishWorkSession,
   getWorkSessions
 } from "./workSession.controller.js";
@@ -13,6 +15,16 @@ const router = Router();
 router.use(auth);
 
 router.post("/start", startWorkSession);
+
+router.patch(
+  "/:id/pause",
+  pauseWorkSession
+);
+
+router.patch(
+  "/:id/resume",
+  resumeWorkSession
+);
 
 router.patch(
   "/:id/finish",
