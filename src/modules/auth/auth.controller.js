@@ -1,15 +1,13 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
 import User from "../../models/User.js";
+import MaintenanceSettings from "../../models/MaintenanceSettings.js";
 
 export async function register(req, res) {
   try {
     const { name, email, password } = req.body;
 
-    const userAlreadyExists = await User.findOne({
-      email
-    });
+    const userAlreadyExists = await User.findOne({ email });
 
     if (userAlreadyExists) {
       return res.status(400).json({
@@ -23,6 +21,21 @@ export async function register(req, res) {
       name,
       email,
       password: hashedPassword
+    });
+
+    await MaintenanceSettings.create({
+      user: user._id,
+
+      fuel: {
+        kmPerLiter: 30,
+        fuelPrice: 6.5
+      },
+
+      maintenance: {
+        oil: { costPerKm: 0 },
+        tires: { costPerKm: 0 },
+        chain: { costPerKm: 0 }
+      }
     });
 
     return res.status(201).json({

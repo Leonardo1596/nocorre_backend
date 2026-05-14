@@ -1,6 +1,8 @@
 import Shift from "../../models/Shift.js";
 import WorkSession from "../../models/WorkSession.js";
 import { calculateShiftMetrics } from "../../services/metrics/calculateShiftMetrics.js";
+import MaintenanceSettings from "../../models/MaintenanceSettings.js";
+
 
 export async function startShift(req, res) {
   try {
@@ -95,10 +97,7 @@ export async function getShift(req, res) {
   }
 }
 
-export async function getShiftMetrics(
-  req,
-  res
-) {
+export async function getShiftMetrics(req, res) {
   try {
     const { id } = req.params;
 
@@ -113,22 +112,26 @@ export async function getShiftMetrics(
       });
     }
 
-    if (shift.status !== "FINISHED") {
+    const workSessions = await WorkSession.find({
+      shift: shift._id
+    });
+
+    const maintenanceSettings =
+      await MaintenanceSettings.findOne({
+        user: req.userId
+      });
+
+    if (!maintenanceSettings) {
       return res.status(400).json({
-        message: "Shift is not finished"
+        message: "Maintenance settings not found"
       });
     }
 
-    const workSessions =
-      await WorkSession.find({
-        shift: shift._id
-      });
-
-    const metrics =
-      calculateShiftMetrics({
-        shift,
-        workSessions
-      });
+    const metrics = calculateShiftMetrics({
+      shift,
+      workSessions,
+      maintenanceSettings
+    });
 
     return res.json(metrics);
   } catch (error) {

@@ -2,7 +2,11 @@ import Shift from "../../models/Shift.js";
 import WorkSession from "../../models/WorkSession.js";
 import VehicleSettings from "../../models/VehicleSettings.js";
 import FuelRecord from "../../models/FuelRecord.js";
+import MaintenanceSettings from "../../models/MaintenanceSettings.js";
 import { calculateFuelExpense } from "../../services/metrics/calculateFuelExpense.js";
+
+import { calculateCostPerKm } from "../../services/costEngine/calculateCostPerKm.js";
+
 
 export async function startWorkSession(
   req,
@@ -50,10 +54,7 @@ export async function startWorkSession(
   }
 }
 
-export async function finishWorkSession(
-  req,
-  res
-) {
+export async function finishWorkSession(req, res) {
   try {
     const { id } = req.params;
 
@@ -64,11 +65,10 @@ export async function finishWorkSession(
       productiveKm
     } = req.body;
 
-    const workSession =
-      await WorkSession.findOne({
-        _id: id,
-        user: req.userId
-      });
+    const workSession = await WorkSession.findOne({
+      _id: id,
+      user: req.userId
+    });
 
     if (!workSession) {
       return res.status(404).json({
@@ -76,69 +76,31 @@ export async function finishWorkSession(
       });
     }
 
-    const vehicleSettings =
-      await VehicleSettings.findOne({
+    const maintenanceSettings =
+      await MaintenanceSettings.findOne({
         user: req.userId
       });
 
-    if (!vehicleSettings) {
+    if (!maintenanceSettings) {
       return res.status(400).json({
-        message:
-          "Vehicle settings not found"
+        message: "Maintenance settings not found"
       });
     }
-
-    const latestFuelRecord =
-      await FuelRecord.findOne({
-        user: req.userId
-      }).sort({
-        createdAt: -1
-      });
-
-    if (!latestFuelRecord) {
-      return res.status(400).json({
-        message:
-          "Fuel record not found"
-      });
-    }
-
-    const fuelExpense =
-      calculateFuelExpense({
-        kilometers: productiveKm,
-
-        fuelPrice:
-          latestFuelRecord.pricePerLiter,
-
-        kmPerLiter:
-          vehicleSettings.kmPerLiter
-      });
 
     workSession.endedAt = new Date();
-
     workSession.status = "FINISHED";
 
-    workSession.grossAmount =
-      grossAmount || 0;
-
-    workSession.foodExpense =
-      foodExpense || 0;
-
-    workSession.otherExpense =
-      otherExpense || 0;
-
-    workSession.productiveKm =
-      productiveKm || 0;
-
-    workSession.fuelExpense =
-      fuelExpense;
+    workSession.grossAmount = grossAmount || 0;
+    workSession.foodExpense = foodExpense || 0;
+    workSession.otherExpense = otherExpense || 0;
+    workSession.productiveKm = productiveKm || 0;
 
     await workSession.save();
 
-    const shift = await Shift.findById(
-      workSession.shift
-    );
+    // atualiza shift
+    const shift = await Shift.findById(workSession.shift);
 
-    shift.productiveKm += productiveKm;
+    shift.productiveKm += productiveKm || 0;
 
     await shift.save();
 
