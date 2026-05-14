@@ -53,7 +53,8 @@ export async function getDashboard(req, res) {
       totalExpenses: 0,
       maintenanceExpense: 0,
       totalKm: 0,
-      totalHours: 0
+      totalHours: 0,
+      productiveHours: 0
     };
 
     for (const shift of shifts) {
@@ -131,6 +132,7 @@ export async function getDashboard(req, res) {
       summary.maintenanceExpense += metrics.financial.maintenanceExpense;
       summary.totalKm += metrics.distance.productiveKm;
       summary.totalHours += metrics.distance.totalHours;
+      summary.productiveHours += metrics.distance.productiveHours;
     }
 
     return res.json({
