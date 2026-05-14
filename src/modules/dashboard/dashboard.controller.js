@@ -130,7 +130,7 @@ export async function getDashboard(req, res) {
       summary.totalExpenses += metrics.financial.totalExpenses;
       summary.maintenanceExpense += metrics.financial.maintenanceExpense;
       summary.totalKm += metrics.distance.productiveKm;
-      summary.totalHours += metrics.distance.productiveHours;
+      summary.totalHours += metrics.distance.totalHours;
     }
 
     return res.json({
