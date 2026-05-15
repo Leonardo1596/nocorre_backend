@@ -11,16 +11,22 @@ export function calculateCostSnapshot({
     fuelPrice / kmPerLiter;
 
   const oilCostPerKm =
-    maintenanceSettings.maintenance.oil
-      .costPerKm || 0;
+    maintenanceSettings.maintenance.oil.lifespanKm > 0
+      ? maintenanceSettings.maintenance.oil.price /
+        maintenanceSettings.maintenance.oil.lifespanKm
+      : 0;
 
   const tiresCostPerKm =
-    maintenanceSettings.maintenance.tires
-      .costPerKm || 0;
+    maintenanceSettings.maintenance.tires.lifespanKm > 0
+      ? maintenanceSettings.maintenance.tires.price /
+        maintenanceSettings.maintenance.tires.lifespanKm
+      : 0;
 
   const chainCostPerKm =
-    maintenanceSettings.maintenance.chain
-      .costPerKm || 0;
+    maintenanceSettings.maintenance.chain.lifespanKm > 0
+      ? maintenanceSettings.maintenance.chain.price /
+        maintenanceSettings.maintenance.chain.lifespanKm
+      : 0;
 
   const maintenanceCostPerKm =
     oilCostPerKm +
@@ -39,11 +45,8 @@ export function calculateCostSnapshot({
 
     maintenance: {
       oilCostPerKm: Number(oilCostPerKm.toFixed(4)),
-
       tiresCostPerKm: Number(tiresCostPerKm.toFixed(4)),
-
       chainCostPerKm: Number(chainCostPerKm.toFixed(4)),
-
       totalCostPerKm: Number(maintenanceCostPerKm.toFixed(4))
     },
 
