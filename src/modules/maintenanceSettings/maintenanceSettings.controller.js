@@ -2,13 +2,7 @@ import MaintenanceSettings from "../../models/MaintenanceSettings.js";
 
 export async function updateMaintenanceSettings(req, res) {
   try {
-    const {
-      fuelPrice,
-      kmPerLiter,
-      oil,
-      tires,
-      chain
-    } = req.body;
+    const { fuel, maintenance } = req.body;
 
     const settings = await MaintenanceSettings.findOne({
       user: req.userId
@@ -20,27 +14,33 @@ export async function updateMaintenanceSettings(req, res) {
       });
     }
 
-    if (fuelPrice !== undefined) {
-      settings.fuel.fuelPrice = fuelPrice;
+    /**
+     * FUEL
+     */
+    if (fuel?.fuelPrice !== undefined) {
+      settings.fuel.fuelPrice = fuel.fuelPrice;
     }
 
-    if (kmPerLiter !== undefined) {
-      settings.fuel.kmPerLiter = kmPerLiter;
+    if (fuel?.kmPerLiter !== undefined) {
+      settings.fuel.kmPerLiter = fuel.kmPerLiter;
     }
 
-    if (oil) {
-      settings.maintenance.oil.price = oil.price;
-      settings.maintenance.oil.lifespanKm = oil.lifespanKm;
+    /**
+     * MAINTENANCE
+     */
+    if (maintenance?.oil) {
+      settings.maintenance.oil.price = maintenance.oil.price;
+      settings.maintenance.oil.lifespanKm = maintenance.oil.lifespanKm;
     }
 
-    if (tires) {
-      settings.maintenance.tires.price = tires.price;
-      settings.maintenance.tires.lifespanKm = tires.lifespanKm;
+    if (maintenance?.tires) {
+      settings.maintenance.tires.price = maintenance.tires.price;
+      settings.maintenance.tires.lifespanKm = maintenance.tires.lifespanKm;
     }
 
-    if (chain) {
-      settings.maintenance.chain.price = chain.price;
-      settings.maintenance.chain.lifespanKm = chain.lifespanKm;
+    if (maintenance?.chain) {
+      settings.maintenance.chain.price = maintenance.chain.price;
+      settings.maintenance.chain.lifespanKm = maintenance.chain.lifespanKm;
     }
 
     await settings.save();
