@@ -1,8 +1,9 @@
 import Shift from "../../models/Shift.js";
 import WorkSession from "../../models/WorkSession.js";
-import { calculateShiftMetrics } from "../../services/metrics/calculateShiftMetrics.js";
 import MaintenanceSettings from "../../models/MaintenanceSettings.js";
 
+import { calculateShiftMetrics } from "../../services/metrics/calculateShiftMetrics.js";
+import { calculateCostSnapshot } from "../../services/costEngine/caculateCostSnapshot.js";
 
 export async function startShift(req, res) {
   try {
@@ -17,9 +18,29 @@ export async function startShift(req, res) {
       });
     }
 
+    const maintenanceSettings =
+      await MaintenanceSettings.findOne({
+        user: req.userId
+      });
+
+    if (!maintenanceSettings) {
+      return res.status(400).json({
+        message: "Maintenance settings not found"
+      });
+    }
+
+    const costSnapshot = calculateCostSnapshot({
+      maintenanceSettings
+    });
+
     const shift = await Shift.create({
       user: req.userId,
-      startedAt: new Date()
+      startedAt: new Date(),
+      status: "ACTIVE",
+      totalKm: 0,
+      productiveKm: 0,
+      route: [],
+      costSnapshot
     });
 
     return res.status(201).json(shift);
@@ -116,21 +137,9 @@ export async function getShiftMetrics(req, res) {
       shift: shift._id
     });
 
-    const maintenanceSettings =
-      await MaintenanceSettings.findOne({
-        user: req.userId
-      });
-
-    if (!maintenanceSettings) {
-      return res.status(400).json({
-        message: "Maintenance settings not found"
-      });
-    }
-
     const metrics = calculateShiftMetrics({
       shift,
-      workSessions,
-      maintenanceSettings
+      workSessions
     });
 
     return res.json(metrics);

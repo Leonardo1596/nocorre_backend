@@ -1,6 +1,5 @@
 import Shift from "../../models/Shift.js";
 import WorkSession from "../../models/WorkSession.js";
-import MaintenanceSettings from "../../models/MaintenanceSettings.js";
 
 import { calculateShiftMetrics } from "../../services/metrics/calculateShiftMetrics.js";
 
@@ -25,22 +24,11 @@ export async function getDashboard(req, res) {
       }
     });
 
-    const shiftIds = shifts.map(shift => shift._id);
+    const shiftIds = shifts.map((shift) => shift._id);
 
     const workSessions = await WorkSession.find({
       shift: { $in: shiftIds }
     });
-
-    const maintenanceSettings =
-      await MaintenanceSettings.findOne({
-        user: req.userId
-      });
-
-    if (!maintenanceSettings) {
-      return res.status(400).json({
-        message: "Maintenance settings not found"
-      });
-    }
 
     const resultByDay = {};
 
@@ -67,14 +55,12 @@ export async function getDashboard(req, res) {
       }).format(date);
 
       const sessionsOfShift = workSessions.filter(
-        session =>
-          String(session.shift) === String(shift._id)
+        (session) => String(session.shift) === String(shift._id)
       );
 
       const metrics = calculateShiftMetrics({
         shift,
-        workSessions: sessionsOfShift,
-        maintenanceSettings
+        workSessions: sessionsOfShift
       });
 
       if (!resultByDay[dayKey]) {
@@ -96,6 +82,7 @@ export async function getDashboard(req, res) {
         };
       }
 
+      // DAILY ACCUMULATION
       resultByDay[dayKey].financial.grossAmount +=
         metrics.financial.grossAmount;
 
@@ -123,6 +110,7 @@ export async function getDashboard(req, res) {
       resultByDay[dayKey].distance.totalHours +=
         metrics.distance.totalHours;
 
+      // SUMMARY ACCUMULATION
       summary.grossAmount += metrics.financial.grossAmount;
       summary.netProfit += metrics.financial.netProfit;
       summary.fuelExpense += metrics.financial.fuelExpense;

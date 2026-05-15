@@ -38,7 +38,7 @@ const maintenanceSettingsSchema = new mongoose.Schema(
             chain: {
                 costPerKm: {
                     type: Number,
-                    deafault: 0
+                    default: 0
                 }
             }
         }

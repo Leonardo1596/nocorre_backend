@@ -34,11 +34,65 @@ const shiftSchema = new mongoose.Schema(
       default: 0
     },
 
+    costSnapshot: {
+      fuel: {
+        fuelPrice: {
+          type: Number,
+          default: 0
+        },
+
+        kmPerLiter: {
+          type: Number,
+          default: 0
+        },
+
+        costPerKm: {
+          type: Number,
+          default: 0
+        }
+      },
+
+      maintenance: {
+        oilCostPerKm: {
+          type: Number,
+          default: 0
+        },
+
+        tires: {
+          type: Number,
+          default: 0
+        },
+
+        chainCostPerKm: {
+          type: Number,
+          default: 0
+        },
+
+        totalCostPerKm: {
+          type: Number,
+          default: 0
+        }
+      },
+
+      totalCostPerKm: {
+        type: Number,
+        default: 0
+      }
+    },
+
     route: [
       {
-        lat: Number,
-        lng: Number,
-        timestamp: Date
+        lat: {
+          type: Number
+        },
+
+        lng: {
+          type: Number
+        },
+
+        timestamp: {
+          type: Date
+        }
       }
     ]
   },
