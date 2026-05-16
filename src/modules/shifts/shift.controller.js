@@ -55,6 +55,8 @@ export async function finishShift(req, res) {
   try {
     const { id } = req.params;
 
+    const { totalKm } = req.body;
+
     const shift = await Shift.findOne({
       _id: id,
       user: req.userId
@@ -68,7 +70,7 @@ export async function finishShift(req, res) {
 
     shift.endedAt = new Date();
     shift.status = "FINISHED";
-
+    shift.totalKm = totalKm;
     await shift.save();
 
     return res.json(shift);
