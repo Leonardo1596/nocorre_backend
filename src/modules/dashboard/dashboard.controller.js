@@ -1,7 +1,15 @@
 import Shift from "../../models/Shift.js";
 import WorkSession from "../../models/WorkSession.js";
-
 import { calculateShiftMetrics } from "../../services/metrics/calculateShiftMetrics.js";
+
+function formatHoursHuman(hours) {
+  const totalMinutes = Math.round((hours || 0) * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+
+  if (h === 0) return `${m}min`;
+  return `${h}h ${m}min`;
+}
 
 export async function getDashboard(req, res) {
   try {
@@ -123,12 +131,26 @@ export async function getDashboard(req, res) {
       summary.productiveHours += metrics.distance.productiveHours;
     }
 
+    const summaryWithHuman = {
+      ...summary,
+      totalHoursHuman: formatHoursHuman(summary.totalHours),
+      productiveHoursHuman: formatHoursHuman(summary.productiveHours)
+    };
+
+    for (const dayKey in resultByDay) {
+      resultByDay[dayKey].distance.totalHoursHuman =
+        formatHoursHuman(resultByDay[dayKey].distance.totalHours);
+
+      resultByDay[dayKey].distance.productiveHoursHuman =
+        formatHoursHuman(resultByDay[dayKey].distance.productiveHours);
+    }
+
     return res.json({
       range: {
         start: startDate,
         end: endDate
       },
-      summary,
+      summary: summaryWithHuman,
       days: resultByDay
     });
 

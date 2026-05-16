@@ -1,5 +1,14 @@
 import { calculateCostPerKm } from "../costEngine/calculateCostPerKm.js";
 
+function formatHoursHuman(hours) {
+  const totalMinutes = Math.round((hours || 0) * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+
+  if (h === 0) return `${m}min`;
+  return `${h}h ${m}min`;
+}
+
 export function calculateShiftMetrics({
   shift,
   workSessions
@@ -45,8 +54,7 @@ export function calculateShiftMetrics({
     workSessions.reduce((acc, session) => {
       if (!session.startedAt) return acc;
 
-      const endDate =
-        session.endedAt || new Date();
+      const endDate = session.endedAt || new Date();
 
       const totalSessionMs =
         new Date(endDate) - new Date(session.startedAt);
@@ -95,7 +103,10 @@ export function calculateShiftMetrics({
     distance: {
       productiveKm: Number(productiveKm.toFixed(2)),
       productiveHours: Number(productiveHours.toFixed(2)),
-      totalHours: Number(totalHours.toFixed(2))
+      productiveHoursHuman: formatHoursHuman(productiveHours),
+
+      totalHours: Number(totalHours.toFixed(2)),
+      totalHoursHuman: formatHoursHuman(totalHours)
     },
 
     efficiency: {
