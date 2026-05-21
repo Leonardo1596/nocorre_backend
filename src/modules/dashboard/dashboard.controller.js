@@ -4,10 +4,12 @@ import { calculateShiftMetrics } from "../../services/metrics/calculateShiftMetr
 
 function formatHoursHuman(hours) {
   const totalMinutes = Math.round((hours || 0) * 60);
+
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
 
   if (h === 0) return `${m}min`;
+
   return `${h}h ${m}min`;
 }
 
@@ -30,7 +32,7 @@ export async function getDashboard(req, res) {
         $gte: startDate,
         $lte: endDate
       }
-    });
+    }).sort({ startedAt: 1 }); // MAIS ANTIGO -> MAIS RECENTE
 
     const shiftIds = shifts.map((shift) => shift._id);
 
@@ -38,7 +40,7 @@ export async function getDashboard(req, res) {
       shift: { $in: shiftIds }
     });
 
-    const resultByDay = {};
+    const resultByDayMap = {};
 
     const summary = {
       grossAmount: 0,
@@ -71,8 +73,9 @@ export async function getDashboard(req, res) {
         workSessions: sessionsOfShift
       });
 
-      if (!resultByDay[dayKey]) {
-        resultByDay[dayKey] = {
+      if (!resultByDayMap[dayKey]) {
+        resultByDayMap[dayKey] = {
+          date: dayKey,
           dayName,
           financial: {
             grossAmount: 0,
@@ -91,31 +94,31 @@ export async function getDashboard(req, res) {
       }
 
       // DAILY ACCUMULATION
-      resultByDay[dayKey].financial.grossAmount +=
+      resultByDayMap[dayKey].financial.grossAmount +=
         metrics.financial.grossAmount;
 
-      resultByDay[dayKey].financial.netProfit +=
+      resultByDayMap[dayKey].financial.netProfit +=
         metrics.financial.netProfit;
 
-      resultByDay[dayKey].financial.fuelExpense +=
+      resultByDayMap[dayKey].financial.fuelExpense +=
         metrics.financial.fuelExpense;
 
-      resultByDay[dayKey].financial.foodExpense +=
+      resultByDayMap[dayKey].financial.foodExpense +=
         metrics.financial.foodExpense;
 
-      resultByDay[dayKey].financial.otherExpense +=
+      resultByDayMap[dayKey].financial.otherExpense +=
         metrics.financial.otherExpense;
 
-      resultByDay[dayKey].financial.totalExpenses +=
+      resultByDayMap[dayKey].financial.totalExpenses +=
         metrics.financial.totalExpenses;
 
-      resultByDay[dayKey].distance.productiveKm +=
+      resultByDayMap[dayKey].distance.productiveKm +=
         metrics.distance.productiveKm;
 
-      resultByDay[dayKey].distance.productiveHours +=
+      resultByDayMap[dayKey].distance.productiveHours +=
         metrics.distance.productiveHours;
 
-      resultByDay[dayKey].distance.totalHours +=
+      resultByDayMap[dayKey].distance.totalHours +=
         metrics.distance.totalHours;
 
       // SUMMARY ACCUMULATION
@@ -131,19 +134,25 @@ export async function getDashboard(req, res) {
       summary.productiveHours += metrics.distance.productiveHours;
     }
 
+    // CONVERTE MAP -> ARRAY ORDENADO
+    const days = Object.values(resultByDayMap).sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
+
+    // FORMATA HUMAN READABLE
+    for (const day of days) {
+      day.distance.totalHoursHuman =
+        formatHoursHuman(day.distance.totalHours);
+
+      day.distance.productiveHoursHuman =
+        formatHoursHuman(day.distance.productiveHours);
+    }
+
     const summaryWithHuman = {
       ...summary,
       totalHoursHuman: formatHoursHuman(summary.totalHours),
       productiveHoursHuman: formatHoursHuman(summary.productiveHours)
     };
-
-    for (const dayKey in resultByDay) {
-      resultByDay[dayKey].distance.totalHoursHuman =
-        formatHoursHuman(resultByDay[dayKey].distance.totalHours);
-
-      resultByDay[dayKey].distance.productiveHoursHuman =
-        formatHoursHuman(resultByDay[dayKey].distance.productiveHours);
-    }
 
     return res.json({
       range: {
@@ -151,7 +160,7 @@ export async function getDashboard(req, res) {
         end: endDate
       },
       summary: summaryWithHuman,
-      days: resultByDay
+      days
     });
 
   } catch (error) {
