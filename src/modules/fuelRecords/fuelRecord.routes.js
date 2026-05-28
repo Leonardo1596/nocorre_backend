@@ -10,7 +10,7 @@ import { auth } from "../../middlewares/auth.js";
 
 const router = Router();
 
-// router.use(auth);
+router.use(auth);
 
 router.post(
   "/",
