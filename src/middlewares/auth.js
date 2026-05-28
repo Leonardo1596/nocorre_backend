@@ -23,6 +23,7 @@ export function auth(req, res, next) {
 
     next();
   } catch {
+    console.log(authHeader)
     return res.status(401).json({
       message: "Invalid token"
     });
