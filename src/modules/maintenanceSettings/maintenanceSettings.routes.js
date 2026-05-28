@@ -4,7 +4,7 @@ import { auth } from "../../middlewares/auth.js";
 
 const router = Router();
 
-router.use(auth);
+// router.use(auth);
 
 router.put("/update", updateMaintenanceSettings);
 router.get("/", getMaintenanceSettings);
