@@ -12,6 +12,8 @@ import {
 
 import { validate } from "../../middlewares/validate.js";
 
+import { auth } from "../../middlewares/auth.js";
+
 const router = Router();
 
 router.post(
@@ -24,6 +26,21 @@ router.post(
   "/login",
   validate(loginSchema),
   login
+);
+
+// valida sessão/token atual
+router.get(
+  "/me",
+  auth,
+  async (req, res) => {
+    try {
+      return res.status(200).json(req.user);
+    } catch (error) {
+      return res.status(500).json({
+        message: "Erro ao validar usuário"
+      });
+    }
+  }
 );
 
 export default router;
