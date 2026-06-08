@@ -181,26 +181,42 @@ export async function deleteShift(req, res) {
 
 export async function deleteByDate(req, res) {
   try {
+    // MODIFICATION: Accept timezoneOffset from the query string
     const { date } = req.params;
+    const { timezoneOffset } = req.query;
 
-    const parsedDate = new Date(date);
-    const startOfDay = new Date(parsedDate);
-    startOfDay.setUTCHours(0, 0, 0, 0);
+    // MODIFICATION: Validate that timezoneOffset is provided
+    if (!timezoneOffset) {
+      return res.status(400).json({
+        message: "The 'timezoneOffset' query parameter is required."
+      });
+    }
 
-    const endOfDay = new Date(parsedDate);
-    endOfDay.setUTCHours(23, 59, 59, 999);
+    const offsetMinutes = parseInt(timezoneOffset, 10);
+    const parsedDate = new Date(date); // e.g., creates a date for "2026-06-07T00:00:00.000Z"
 
+    // MODIFICATION: Define the 24-hour window based on the user's local day, but in UTC.
+    // For "2026-06-07" and a -180 offset (Brazil), this creates a start date of:
+    // 2026-06-07T00:00:00.000Z + 180 minutes = 2026-06-07T03:00:00.000Z
+    const startOfDayLocal = new Date(parsedDate.getTime() + (offsetMinutes * 60 * 1000));
+
+    // And an end date of:
+    // 2026-06-08T03:00:00.000Z
+    const endOfDayLocal = new Date(startOfDayLocal.getTime() + (24 * 60 * 60 * 1000));
+
+    // This query will now correctly find the shift at 2026-06-08T02:10:00Z
+    // because it falls between 2026-06-07T03:00:00Z and 2026-06-08T03:00:00Z.
     const shift = await Shift.findOne({
       user: req.userId,
       startedAt: {
-        $gte: startOfDay,
-        $lt: endOfDay
+        $gte: startOfDayLocal,
+        $lt: endOfDayLocal
       }
     });
 
     if (!shift) {
       return res.status(404).json({
-        message: "Shift not found"
+        message: "Shift not found for the specified local date."
       });
     }
 
@@ -209,8 +225,13 @@ export async function deleteByDate(req, res) {
       user: req.userId
     });
 
+    // Also delete associated work sessions for a complete cleanup
+    await WorkSession.deleteMany({
+      shift: shift._id
+    });
+
     return res.json({
-      message: "Shift deleted successfully"
+      message: "Shift and associated sessions deleted successfully"
     });
   } catch (error) {
     return res.status(500).json({
