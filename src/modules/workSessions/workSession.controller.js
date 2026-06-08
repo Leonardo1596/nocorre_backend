@@ -1,18 +1,18 @@
-import Shift from "../../models/Shift.js";
-import WorkSession from "../../models/WorkSession.js";
-import VehicleSettings from "../../models/VehicleSettings.js";
-import FuelRecord from "../../models/FuelRecord.js";
-import MaintenanceSettings from "../../models/MaintenanceSettings.js";
-import { calculateFuelExpense } from "../../services/metrics/calculateFuelExpense.js";
-
-import { calculateCostPerKm } from "../../services/costEngine/calculateCostPerKm.js";
-
-
 export async function startWorkSession(
   req,
   res
 ) {
   try {
+    // MODIFICATION: Accept startedAt and timezoneOffset from the client
+    const { startedAt, timezoneOffset } = req.body;
+
+    // MODIFICATION: Validate the new required fields
+    if (!startedAt || timezoneOffset === undefined) {
+      return res.status(400).json({
+        message: "startedAt and timezoneOffset from the client are required."
+      });
+    }
+
     const activeShift = await Shift.findOne({
       user: req.userId,
       status: "ACTIVE"
@@ -36,12 +36,13 @@ export async function startWorkSession(
           "There is already an active work session"
       });
     }
-
+    
+    // MODIFICATION: Use the client's time for starting the session
     const workSession =
       await WorkSession.create({
         shift: activeShift._id,
         user: req.userId,
-        startedAt: new Date()
+        startedAt: new Date(startedAt) // Use the client's provided ISO string
       });
 
     return res.status(201).json(
@@ -227,37 +228,43 @@ export async function deleteWorkSession(req, res) {
 
 export async function deleteByDate(req, res) {
   try {
+    // MODIFICATION: Accept timezoneOffset from the query string
     const { date } = req.params;
+    const { timezoneOffset } = req.query;
 
-    const parsedDate = new Date(date);
-    const startOfDay = new Date(parsedDate);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(parsedDate);
-    endOfDay.setUTCHours(23, 59, 59, 999);
-
-    const workSession = await WorkSession.findOne({
-      user: req.userId,
-      startedAt: {
-        $gte: startOfDay,
-        $lt: endOfDay
-      }
-    });
-
-    if (!workSession) {
-      return res.status(404).json({
-        message: "Work session not found"
+    // MODIFICATION: Validate that timezoneOffset is provided
+    if (!timezoneOffset) {
+      return res.status(400).json({
+        message: "The 'timezoneOffset' query parameter is required."
       });
     }
 
-    await WorkSession.deleteOne({
+    const offsetMinutes = parseInt(timezoneOffset, 10);
+    const parsedDate = new Date(date);
+
+    // MODIFICATION: Define the 24-hour window based on the user's local day, in UTC
+    const startOfDayLocal = new Date(parsedDate.getTime() + (offsetMinutes * 60 * 1000));
+    const endOfDayLocal = new Date(startOfDayLocal.getTime() + (24 * 60 * 60 * 1000));
+    
+    // MODIFICATION: Find all sessions within the local day range for the user
+    const result = await WorkSession.deleteMany({
       user: req.userId,
-      _id: workSession._id
+      startedAt: {
+        $gte: startOfDayLocal,
+        $lt: endOfDayLocal
+      }
     });
 
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        message: "No work sessions found for the specified local date."
+      });
+    }
+    
     return res.json({
-      message: "Work sessions deleted successfully"
+      message: `${result.deletedCount} work session(s) deleted successfully`
     });
+
   } catch (error) {
     return res.status(500).json({
       message: error.message
