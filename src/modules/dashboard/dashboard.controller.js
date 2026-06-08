@@ -15,13 +15,18 @@ function formatHoursHuman(hours) {
 
 export async function getDashboard(req, res) {
   try {
-    const { start, end } = req.query;
+    // MODIFICATION: Accept timezoneOffset from the query
+    const { start, end, timezoneOffset } = req.query;
 
-    if (!start || !end) {
+    // MODIFICATION: Validate that timezoneOffset is present
+    if (!start || !end || !timezoneOffset) {
       return res.status(400).json({
-        message: "start and end dates are required"
+        message: "start, end, and timezoneOffset query parameters are required"
       });
     }
+    
+    // MODIFICATION: Parse the offset, which is sent in minutes by the client
+    const offsetMinutes = parseInt(timezoneOffset, 10);
 
     const startDate = new Date(start);
     const endDate = new Date(end);
@@ -56,13 +61,17 @@ export async function getDashboard(req, res) {
     };
 
     for (const shift of shifts) {
-      const date = new Date(shift.startedAt);
+      // MODIFICATION: The original 'date' variable is replaced by the local time calculation
+      const utcDate = new Date(shift.startedAt);
+      const localTime = new Date(utcDate.getTime() - (offsetMinutes * 60 * 1000));
 
-      const dayKey = date.toISOString().split("T")[0];
+      // MODIFICATION: The dayKey is now based on the correct localTime
+      const dayKey = localTime.toISOString().split("T")[0];
 
+      // MODIFICATION: The dayName is now based on the correct localTime
       const dayName = new Intl.DateTimeFormat("pt-BR", {
         weekday: "long"
-      }).format(date);
+      }).format(localTime);
 
       const sessionsOfShift = workSessions.filter(
         (session) => String(session.shift) === String(shift._id)
