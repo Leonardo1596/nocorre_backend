@@ -33,9 +33,15 @@ export async function startShift(req, res) {
       maintenanceSettings
     });
 
+    // Capture the start time from the client's request
+    const { startedAt } = req.body;
+
+    // Use the client's time. If it's not available, fall back to the server's time.
+    const shiftDate = startedAt ? new Date(startedAt) : new Date();
+
     const shift = await Shift.create({
       user: req.userId,
-      startedAt: new Date(),
+      startedAt: shiftDate,
       status: "ACTIVE",
       totalKm: 0,
       productiveKm: 0,
