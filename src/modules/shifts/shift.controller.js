@@ -7,37 +7,30 @@ import { calculateCostSnapshot } from "../../services/costEngine/caculateCostSna
 
 export async function startShift(req, res) {
   try {
-    const activeShift = await Shift.findOne({
-      user: req.userId,
-      status: "ACTIVE"
-    });
-
+    const activeShift = await Shift.findOne({ user: req.userId, status: "ACTIVE" });
     if (activeShift) {
-      return res.status(400).json({
-        message: "There is already an active shift"
-      });
+      return res.status(400).json({ message: "There is already an active shift" });
     }
 
-    const maintenanceSettings =
-      await MaintenanceSettings.findOne({
-        user: req.userId
-      });
-
+    const maintenanceSettings = await MaintenanceSettings.findOne({ user: req.userId });
     if (!maintenanceSettings) {
+      return res.status(400).json({ message: "Maintenance settings not found" });
+    }
+
+    const costSnapshot = calculateCostSnapshot({ maintenanceSettings });
+
+    // The frontend now sends startedAt (ISO string) and timezoneOffset (minutes)
+    const { startedAt, timezoneOffset } = req.body;
+
+    // Add validation for the new required fields
+    if (!startedAt || timezoneOffset === undefined) {
       return res.status(400).json({
-        message: "Maintenance settings not found"
+        message: "startedAt and timezoneOffset from the client are required."
       });
     }
 
-    const costSnapshot = calculateCostSnapshot({
-      maintenanceSettings
-    });
-
-    // Capture the start time from the client's request
-    const { startedAt } = req.body;
-
-    // Use the client's time. If it's not available, fall back to the server's time.
-    const shiftDate = startedAt ? new Date(startedAt) : new Date();
+    // The startedAt is already a UTC ISO string. new Date() will parse it correctly.
+    const shiftDate = new Date(startedAt);
 
     const shift = await Shift.create({
       user: req.userId,
@@ -51,9 +44,7 @@ export async function startShift(req, res) {
 
     return res.status(201).json(shift);
   } catch (error) {
-    return res.status(500).json({
-      message: error.message
-    });
+    return res.status(500).json({ message: error.message });
   }
 }
 
