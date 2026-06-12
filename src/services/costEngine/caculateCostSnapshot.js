@@ -16,13 +16,19 @@ export function calculateCostSnapshot({
         maintenanceSettings.maintenance.oil.lifespanKm
       : 0;
 
-  const tiresCostPerKm =
-    maintenanceSettings.maintenance.tires.lifespanKm > 0
-      ? maintenanceSettings.maintenance.tires.price /
-        maintenanceSettings.maintenance.tires.lifespanKm
+  const frontTireCostPerKm =
+    maintenanceSettings.maintenance.frontTire.lifespanKm > 0
+      ? maintenanceSettings.maintenance.frontTire.price /
+        maintenanceSettings.maintenance.frontTire.lifespanKm
       : 0;
 
-  const chainCostPerKm =
+  const rearTireCostPerKm =
+    maintenanceSettings.maintenance.rearTire.lifespanKm > 0
+      ? maintenanceSettings.maintenance.rearTire.price /
+        maintenanceSettings.maintenance.rearTire.lifespanKm
+      : 0;
+
+  const chainKitCostPerKm =
     maintenanceSettings.maintenance.chain.lifespanKm > 0
       ? maintenanceSettings.maintenance.chain.price /
         maintenanceSettings.maintenance.chain.lifespanKm
@@ -30,8 +36,9 @@ export function calculateCostSnapshot({
 
   const maintenanceCostPerKm =
     oilCostPerKm +
-    tiresCostPerKm +
-    chainCostPerKm;
+    frontTireCostPerKm +
+    rearTireCostPerKm +
+    chainKitCostPerKm;
 
   const totalCostPerKm =
     fuelCostPerKm + maintenanceCostPerKm;
@@ -44,12 +51,29 @@ export function calculateCostSnapshot({
     },
 
     maintenance: {
-      oilCostPerKm: Number(oilCostPerKm.toFixed(4)),
-      tiresCostPerKm: Number(tiresCostPerKm.toFixed(4)),
-      chainCostPerKm: Number(chainCostPerKm.toFixed(4)),
-      totalCostPerKm: Number(maintenanceCostPerKm.toFixed(4))
+      oilCostPerKm: Number(
+        oilCostPerKm.toFixed(4)
+      ),
+
+      frontTireCostPerKm: Number(
+        frontTireCostPerKm.toFixed(4)
+      ),
+
+      rearTireCostPerKm: Number(
+        rearTireCostPerKm.toFixed(4)
+      ),
+
+      chainKitCostPerKm: Number(
+        chainKitCostPerKm.toFixed(4)
+      ),
+
+      totalCostPerKm: Number(
+        maintenanceCostPerKm.toFixed(4)
+      )
     },
 
-    totalCostPerKm: Number(totalCostPerKm.toFixed(4))
+    totalCostPerKm: Number(
+      totalCostPerKm.toFixed(4)
+    )
   };
 }
