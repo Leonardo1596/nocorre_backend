@@ -32,7 +32,18 @@ const maintenanceSettingsSchema = new mongoose.Schema(
         }
       },
 
-      tires: {
+      frontTire: {
+        price: {
+          type: Number,
+          default: 0
+        },
+        lifespanKm: {
+          type: Number,
+          default: 0
+        }
+      },
+
+      rearTire: {
         price: {
           type: Number,
           default: 0

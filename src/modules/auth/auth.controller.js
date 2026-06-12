@@ -32,9 +32,25 @@ export async function register(req, res) {
       },
 
       maintenance: {
-        oil: { costPerKm: 0 },
-        tires: { costPerKm: 0 },
-        chain: { costPerKm: 0 }
+        oil: {
+          price: 0,
+          lifespanKm: 0
+        },
+
+        frontTire: {
+          price: 0,
+          lifespanKm: 0
+        },
+
+        rearTire: {
+          price: 0,
+          lifespanKm: 0
+        },
+
+        chain: {
+          price: 0,
+          lifespanKm: 0
+        }
       }
     });
 

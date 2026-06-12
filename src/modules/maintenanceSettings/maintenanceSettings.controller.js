@@ -33,9 +33,14 @@ export async function updateMaintenanceSettings(req, res) {
       settings.maintenance.oil.lifespanKm = maintenance.oil.lifespanKm;
     }
 
-    if (maintenance?.tires) {
-      settings.maintenance.tires.price = maintenance.tires.price;
-      settings.maintenance.tires.lifespanKm = maintenance.tires.lifespanKm;
+    if (maintenance?.frontTire) {
+      settings.maintenance.frontTire.price = maintenance.frontTire.price;
+      settings.maintenance.frontTire.lifespanKm = maintenance.frontTire.lifespanKm;
+    }
+
+    if (maintenance?.rearTire) {
+      settings.maintenance.rearTire.price = maintenance.rearTire.price;
+      settings.maintenance.rearTire.lifespanKm = maintenance.rearTire.lifespanKm;
     }
 
     if (maintenance?.chain) {
