@@ -23,6 +23,8 @@ export function calculateShiftMetrics({
     0
   );
 
+  const totalKm = shift.totalKm || 0;
+
   const foodExpense = workSessions.reduce(
     (acc, session) => acc + (session.foodExpense || 0),
     0
@@ -70,8 +72,8 @@ export function calculateShiftMetrics({
 
   const totalHours = shift.startedAt
     ? (new Date(shift.endedAt || new Date()) -
-        new Date(shift.startedAt)) /
-      (1000 * 60 * 60)
+      new Date(shift.startedAt)) /
+    (1000 * 60 * 60)
     : 0;
 
   const productiveProfitPerHour =
@@ -105,6 +107,7 @@ export function calculateShiftMetrics({
       productiveHours: Number(productiveHours.toFixed(2)),
       productiveHoursHuman: formatHoursHuman(productiveHours),
 
+      totalKm: Number(totalKm.toFixed(2)),
       totalHours: Number(totalHours.toFixed(2)),
       totalHoursHuman: formatHoursHuman(totalHours)
     },
