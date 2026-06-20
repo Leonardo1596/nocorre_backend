@@ -225,6 +225,11 @@ export async function getDashboard(req, res) {
         ? summary.netProfit / summary.productiveKm
         : 0;
 
+    const grossAmountPerProductiveKm = 
+      summary.productiveKm > 0
+        ? summary.grossAmount / summary.productiveKm
+        : 0;
+
     const summaryWithHuman = {
       ...summary,
 
@@ -250,6 +255,14 @@ export async function getDashboard(req, res) {
 
       productiveHoursHuman: formatHoursHuman(
         summary.productiveHours
+      ),
+
+      productiveProfitPerKm: Number(
+        productiveProfitPerKm.toFixed(2)
+      ),
+
+      grossAmountPerProductiveKm: Number(
+        grossAmountPerProductiveKm.toFixed(2)
       ),
 
       efficiency: {
@@ -279,10 +292,6 @@ export async function getDashboard(req, res) {
 
         profitPerTotalKm: Number(
           profitPerTotalKm.toFixed(2)
-        ),
-
-        productiveProfitPerKm: Number(
-          productiveProfitPerKm.toFixed(2)
         ),
       }
     };
