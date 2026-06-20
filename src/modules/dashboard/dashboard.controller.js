@@ -61,6 +61,13 @@ export async function getDashboard(req, res) {
       productiveHours: 0
     };
 
+    const efficiency = {
+      deadKm: 0,
+      idleHours: 0,
+      deadFuelExpense: 0,
+      deadMaintenanceExpense: 0
+    };
+
     for (const shift of shifts) {
       const utcDate = new Date(shift.startedAt);
 
@@ -176,6 +183,19 @@ export async function getDashboard(req, res) {
 
       summary.productiveHours +=
         metrics.distance.productiveHours;
+
+      // EFFICIENCY ACCUMULATION
+      efficiency.deadKm +=
+        metrics.efficiency.deadKm;
+
+      efficiency.idleHours +=
+        metrics.efficiency.idleHours;
+
+      efficiency.deadFuelExpense +=
+        metrics.efficiency.deadFuelExpense;
+
+      efficiency.deadMaintenanceExpense +=
+        metrics.efficiency.deadMaintenanceExpense;
     }
 
     const days = Object.values(resultByDayMap).sort(
@@ -189,6 +209,16 @@ export async function getDashboard(req, res) {
       day.distance.productiveHoursHuman =
         formatHoursHuman(day.distance.productiveHours);
     }
+
+    const turnProfitPerHour =
+      summary.totalHours > 0
+        ? summary.netProfit / summary.totalHours
+        : 0;
+
+    const profitPerTotalKm =
+      summary.totalKm > 0
+        ? summary.netProfit / summary.totalKm
+        : 0;
 
     const summaryWithHuman = {
       ...summary,
@@ -215,7 +245,37 @@ export async function getDashboard(req, res) {
 
       productiveHoursHuman: formatHoursHuman(
         summary.productiveHours
-      )
+      ),
+
+      efficiency: {
+        deadKm: Number(
+          efficiency.deadKm.toFixed(2)
+        ),
+
+        idleHours: Number(
+          efficiency.idleHours.toFixed(2)
+        ),
+
+        idleHoursHuman: formatHoursHuman(
+          efficiency.idleHours
+        ),
+
+        deadFuelExpense: Number(
+          efficiency.deadFuelExpense.toFixed(2)
+        ),
+
+        deadMaintenanceExpense: Number(
+          efficiency.deadMaintenanceExpense.toFixed(2)
+        ),
+
+        turnProfitPerHour: Number(
+          turnProfitPerHour.toFixed(2)
+        ),
+
+        profitPerTotalKm: Number(
+          profitPerTotalKm.toFixed(2)
+        )
+      }
     };
 
     return res.json({

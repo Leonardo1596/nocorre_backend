@@ -35,13 +35,19 @@ export function calculateShiftMetrics({
     0
   );
 
-  const cost = shift.costSnapshot;
+  const cost = shift.costSnapshot || {};
+
+  const fuelCostPerKm =
+    cost?.fuel?.costPerKm || 0;
+
+  const maintenanceCostPerKm =
+    cost?.maintenance?.totalCostPerKm || 0;
 
   const fuelExpense =
-    cost.fuel.costPerKm * productiveKm;
+    fuelCostPerKm * productiveKm;
 
   const maintenanceExpense =
-    cost.maintenance.totalCostPerKm * productiveKm;
+    maintenanceCostPerKm * productiveKm;
 
   const totalExpenses =
     fuelExpense +
@@ -91,6 +97,23 @@ export function calculateShiftMetrics({
       ? netProfit / productiveKm
       : 0;
 
+  const deadKm =
+    totalKm - productiveKm;
+
+  const idleHours =
+    totalHours - productiveHours;
+
+  const deadFuelExpense =
+    cost.fuel.costPerKm * deadKm;
+
+  const deadMaintenanceExpense =
+    cost.maintenance.totalCostPerKm * deadKm;
+
+  const profitPerTotalKm =
+    totalKm > 0
+      ? netProfit / totalKm
+      : 0;
+
   return {
     financial: {
       grossAmount: Number(grossAmount.toFixed(2)),
@@ -113,10 +136,45 @@ export function calculateShiftMetrics({
     },
 
     efficiency: {
-      productiveProfitPerHour: Number(productiveProfitPerHour.toFixed(2)),
-      totalProfitPerHour: Number(totalProfitPerHour.toFixed(2)),
-      profitPerKm: Number(profitPerKm.toFixed(2)),
-      costPerKm: Number(cost.totalCostPerKm.toFixed(4))
+      productiveProfitPerHour: Number(
+        productiveProfitPerHour.toFixed(2)
+      ),
+
+      totalProfitPerHour: Number(
+        totalProfitPerHour.toFixed(2)
+      ),
+
+      profitPerKm: Number(
+        profitPerKm.toFixed(2)
+      ),
+
+      profitPerTotalKm: Number(
+        profitPerTotalKm.toFixed(2)
+      ),
+
+      costPerKm: Number(
+        cost.totalCostPerKm.toFixed(4)
+      ),
+
+      deadKm: Number(
+        deadKm.toFixed(2)
+      ),
+
+      idleHours: Number(
+        idleHours.toFixed(2)
+      ),
+
+      idleHoursHuman: formatHoursHuman(
+        idleHours
+      ),
+
+      deadFuelExpense: Number(
+        deadFuelExpense.toFixed(2)
+      ),
+
+      deadMaintenanceExpense: Number(
+        deadMaintenanceExpense.toFixed(2)
+      )
     }
   };
 }
