@@ -1,11 +1,10 @@
-import { calculateCostPerKm } from "../costEngine/calculateCostPerKm.js";
-
 function formatHoursHuman(hours) {
   const totalMinutes = Math.round((hours || 0) * 60);
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
 
   if (h === 0) return `${m}min`;
+
   return `${h}h ${m}min`;
 }
 
@@ -62,10 +61,12 @@ export function calculateShiftMetrics({
     workSessions.reduce((acc, session) => {
       if (!session.startedAt) return acc;
 
-      const endDate = session.endedAt || new Date();
+      const endDate =
+        session.endedAt || new Date();
 
       const totalSessionMs =
-        new Date(endDate) - new Date(session.startedAt);
+        new Date(endDate) -
+        new Date(session.startedAt);
 
       const pausedMs =
         session.pausedDurationMs || 0;
@@ -77,25 +78,11 @@ export function calculateShiftMetrics({
     productiveMilliseconds / (1000 * 60 * 60);
 
   const totalHours = shift.startedAt
-    ? (new Date(shift.endedAt || new Date()) -
-      new Date(shift.startedAt)) /
-    (1000 * 60 * 60)
+    ? (
+        new Date(shift.endedAt || new Date()) -
+        new Date(shift.startedAt)
+      ) / (1000 * 60 * 60)
     : 0;
-
-  const productiveProfitPerHour =
-    productiveHours > 0
-      ? netProfit / productiveHours
-      : 0;
-
-  const totalProfitPerHour =
-    totalHours > 0
-      ? netProfit / totalHours
-      : 0;
-
-  const profitPerKm =
-    productiveKm > 0
-      ? netProfit / productiveKm
-      : 0;
 
   const deadKm =
     totalKm - productiveKm;
@@ -104,14 +91,42 @@ export function calculateShiftMetrics({
     totalHours - productiveHours;
 
   const deadFuelExpense =
-    cost.fuel.costPerKm * deadKm;
+    fuelCostPerKm * deadKm;
 
   const deadMaintenanceExpense =
-    cost.maintenance.totalCostPerKm * deadKm;
+    maintenanceCostPerKm * deadKm;
+
+  const efficiencyFuelExpense =
+    fuelExpense + deadFuelExpense;
+
+  const efficiencyMaintenanceExpense =
+    maintenanceExpense + deadMaintenanceExpense;
+
+  const efficiencyNetProfit =
+    grossAmount -
+    efficiencyFuelExpense -
+    efficiencyMaintenanceExpense -
+    foodExpense -
+    otherExpense;
+
+  const productiveProfitPerHour =
+    productiveHours > 0
+      ? netProfit / productiveHours
+      : 0;
+
+  const totalProfitPerHour =
+    totalHours > 0
+      ? efficiencyNetProfit / totalHours
+      : 0;
+
+  const profitPerKm =
+    productiveKm > 0
+      ? netProfit / productiveKm
+      : 0;
 
   const profitPerTotalKm =
     totalKm > 0
-      ? netProfit / totalKm
+      ? efficiencyNetProfit / totalKm
       : 0;
 
   return {
@@ -129,49 +144,38 @@ export function calculateShiftMetrics({
       productiveKm: Number(productiveKm.toFixed(2)),
       productiveHours: Number(productiveHours.toFixed(2)),
       productiveHoursHuman: formatHoursHuman(productiveHours),
-
       totalKm: Number(totalKm.toFixed(2)),
       totalHours: Number(totalHours.toFixed(2)),
       totalHoursHuman: formatHoursHuman(totalHours)
     },
 
     efficiency: {
+      netProfit: Number(efficiencyNetProfit.toFixed(2)),
+      fuelExpense: Number(efficiencyFuelExpense.toFixed(2)),
+      maintenanceExpense: Number(
+        efficiencyMaintenanceExpense.toFixed(2)
+      ),
       productiveProfitPerHour: Number(
         productiveProfitPerHour.toFixed(2)
       ),
-
       totalProfitPerHour: Number(
         totalProfitPerHour.toFixed(2)
       ),
-
       profitPerKm: Number(
         profitPerKm.toFixed(2)
       ),
-
       profitPerTotalKm: Number(
         profitPerTotalKm.toFixed(2)
       ),
-
       costPerKm: Number(
-        cost.totalCostPerKm.toFixed(4)
+        (cost?.totalCostPerKm || 0).toFixed(4)
       ),
-
-      deadKm: Number(
-        deadKm.toFixed(2)
-      ),
-
-      idleHours: Number(
-        idleHours.toFixed(2)
-      ),
-
-      idleHoursHuman: formatHoursHuman(
-        idleHours
-      ),
-
+      deadKm: Number(deadKm.toFixed(2)),
+      idleHours: Number(idleHours.toFixed(2)),
+      idleHoursHuman: formatHoursHuman(idleHours),
       deadFuelExpense: Number(
         deadFuelExpense.toFixed(2)
       ),
-
       deadMaintenanceExpense: Number(
         deadMaintenanceExpense.toFixed(2)
       )

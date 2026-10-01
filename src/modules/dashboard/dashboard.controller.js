@@ -4,7 +4,6 @@ import { calculateShiftMetrics } from "../../services/metrics/calculateShiftMetr
 
 function formatHoursHuman(hours) {
   const totalMinutes = Math.round((hours || 0) * 60);
-
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
 
@@ -15,7 +14,11 @@ function formatHoursHuman(hours) {
 
 export async function getDashboard(req, res) {
   try {
-    const { start, end, timezoneOffset } = req.query;
+    const {
+      start,
+      end,
+      timezoneOffset
+    } = req.query;
 
     if (!start || !end || !timezoneOffset) {
       return res.status(400).json({
@@ -24,7 +27,8 @@ export async function getDashboard(req, res) {
       });
     }
 
-    const offsetMinutes = parseInt(timezoneOffset, 10);
+    const offsetMinutes =
+      parseInt(timezoneOffset, 10);
 
     const startDate = new Date(start);
     const endDate = new Date(end);
@@ -37,11 +41,13 @@ export async function getDashboard(req, res) {
       }
     }).sort({ startedAt: 1 });
 
-    const shiftIds = shifts.map((shift) => shift._id);
+    const shiftIds =
+      shifts.map((shift) => shift._id);
 
-    const workSessions = await WorkSession.find({
-      shift: { $in: shiftIds }
-    });
+    const workSessions =
+      await WorkSession.find({
+        shift: { $in: shiftIds }
+      });
 
     const resultByDayMap = {};
 
@@ -53,10 +59,8 @@ export async function getDashboard(req, res) {
       netProfit: 0,
       totalExpenses: 0,
       maintenanceExpense: 0,
-
       productiveKm: 0,
       totalKm: 0,
-
       totalHours: 0,
       productiveHours: 0
     };
@@ -65,39 +69,47 @@ export async function getDashboard(req, res) {
       deadKm: 0,
       idleHours: 0,
       deadFuelExpense: 0,
-      deadMaintenanceExpense: 0
+      deadMaintenanceExpense: 0,
+      fuelExpense: 0,
+      maintenanceExpense: 0,
+      netProfit: 0
     };
 
     for (const shift of shifts) {
-      const utcDate = new Date(shift.startedAt);
+      const utcDate =
+        new Date(shift.startedAt);
 
-      const localTime = new Date(
-        utcDate.getTime() - offsetMinutes * 60 * 1000
-      );
+      const localTime =
+        new Date(
+          utcDate.getTime() -
+          offsetMinutes * 60 * 1000
+        );
 
-      const dayKey = localTime.toISOString().split("T")[0];
+      const dayKey =
+        localTime.toISOString().split("T")[0];
 
-      const dayName = new Intl.DateTimeFormat("pt-BR", {
-        weekday: "long"
-      }).format(localTime);
+      const dayName =
+        new Intl.DateTimeFormat("pt-BR", {
+          weekday: "long"
+        }).format(localTime);
 
-      const sessionsOfShift = workSessions.filter(
-        (session) =>
-          String(session.shift) === String(shift._id)
-      );
+      const sessionsOfShift =
+        workSessions.filter(
+          (session) =>
+            String(session.shift) ===
+            String(shift._id)
+        );
 
-      const metrics = calculateShiftMetrics({
-        shift,
-        workSessions: sessionsOfShift
-      });
-
-      console.log(metrics)
+      const metrics =
+        calculateShiftMetrics({
+          shift,
+          workSessions: sessionsOfShift
+        });
 
       if (!resultByDayMap[dayKey]) {
         resultByDayMap[dayKey] = {
           date: dayKey,
           dayName,
-
           financial: {
             grossAmount: 0,
             netProfit: 0,
@@ -106,18 +118,14 @@ export async function getDashboard(req, res) {
             otherExpense: 0,
             totalExpenses: 0
           },
-
           distance: {
             productiveKm: 0,
             totalKm: 0,
-
             productiveHours: 0,
             totalHours: 0
           }
         };
       }
-
-      // DAILY ACCUMULATION
 
       resultByDayMap[dayKey].financial.grossAmount +=
         metrics.financial.grossAmount;
@@ -148,8 +156,6 @@ export async function getDashboard(req, res) {
 
       resultByDayMap[dayKey].distance.totalHours +=
         metrics.distance.totalHours;
-
-      // SUMMARY ACCUMULATION
 
       summary.grossAmount +=
         metrics.financial.grossAmount;
@@ -184,7 +190,6 @@ export async function getDashboard(req, res) {
       summary.productiveHours +=
         metrics.distance.productiveHours;
 
-      // EFFICIENCY ACCUMULATION
       efficiency.deadKm +=
         metrics.efficiency.deadKm;
 
@@ -196,38 +201,58 @@ export async function getDashboard(req, res) {
 
       efficiency.deadMaintenanceExpense +=
         metrics.efficiency.deadMaintenanceExpense;
+
+      efficiency.fuelExpense +=
+        metrics.efficiency.fuelExpense;
+
+      efficiency.maintenanceExpense +=
+        metrics.efficiency.maintenanceExpense;
+
+      efficiency.netProfit +=
+        metrics.efficiency.netProfit;
     }
 
-    const days = Object.values(resultByDayMap).sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
-    );
+    const days =
+      Object.values(resultByDayMap).sort(
+        (a, b) =>
+          new Date(a.date) -
+          new Date(b.date)
+      );
 
     for (const day of days) {
       day.distance.totalHoursHuman =
-        formatHoursHuman(day.distance.totalHours);
+        formatHoursHuman(
+          day.distance.totalHours
+        );
 
       day.distance.productiveHoursHuman =
-        formatHoursHuman(day.distance.productiveHours);
+        formatHoursHuman(
+          day.distance.productiveHours
+        );
     }
 
     const turnProfitPerHour =
       summary.totalHours > 0
-        ? summary.netProfit / summary.totalHours
+        ? efficiency.netProfit /
+          summary.totalHours
         : 0;
 
     const profitPerTotalKm =
       summary.totalKm > 0
-        ? summary.netProfit / summary.totalKm
+        ? efficiency.netProfit /
+          summary.totalKm
         : 0;
 
     const productiveProfitPerKm =
       summary.productiveKm > 0
-        ? summary.netProfit / summary.productiveKm
+        ? summary.netProfit /
+          summary.productiveKm
         : 0;
 
-    const grossAmountPerProductiveKm = 
+    const grossAmountPerProductiveKm =
       summary.productiveKm > 0
-        ? summary.grossAmount / summary.productiveKm
+        ? summary.grossAmount /
+          summary.productiveKm
         : 0;
 
     const summaryWithHuman = {
@@ -249,21 +274,25 @@ export async function getDashboard(req, res) {
         summary.productiveHours.toFixed(2)
       ),
 
-      totalHoursHuman: formatHoursHuman(
-        summary.totalHours
-      ),
+      totalHoursHuman:
+        formatHoursHuman(
+          summary.totalHours
+        ),
 
-      productiveHoursHuman: formatHoursHuman(
-        summary.productiveHours
-      ),
+      productiveHoursHuman:
+        formatHoursHuman(
+          summary.productiveHours
+        ),
 
-      productiveProfitPerKm: Number(
-        productiveProfitPerKm.toFixed(2)
-      ),
+      productiveProfitPerKm:
+        Number(
+          productiveProfitPerKm.toFixed(2)
+        ),
 
-      grossAmountPerProductiveKm: Number(
-        grossAmountPerProductiveKm.toFixed(2)
-      ),
+      grossAmountPerProductiveKm:
+        Number(
+          grossAmountPerProductiveKm.toFixed(2)
+        ),
 
       efficiency: {
         deadKm: Number(
@@ -274,9 +303,10 @@ export async function getDashboard(req, res) {
           efficiency.idleHours.toFixed(2)
         ),
 
-        idleHoursHuman: formatHoursHuman(
-          efficiency.idleHours
-        ),
+        idleHoursHuman:
+          formatHoursHuman(
+            efficiency.idleHours
+          ),
 
         deadFuelExpense: Number(
           efficiency.deadFuelExpense.toFixed(2)
@@ -286,13 +316,25 @@ export async function getDashboard(req, res) {
           efficiency.deadMaintenanceExpense.toFixed(2)
         ),
 
+        fuelExpense: Number(
+          efficiency.fuelExpense.toFixed(2)
+        ),
+
+        maintenanceExpense: Number(
+          efficiency.maintenanceExpense.toFixed(2)
+        ),
+
+        netProfit: Number(
+          efficiency.netProfit.toFixed(2)
+        ),
+
         turnProfitPerHour: Number(
           turnProfitPerHour.toFixed(2)
         ),
 
         profitPerTotalKm: Number(
           profitPerTotalKm.toFixed(2)
-        ),
+        )
       }
     };
 
@@ -301,13 +343,12 @@ export async function getDashboard(req, res) {
         start: startDate,
         end: endDate
       },
-
       summary: summaryWithHuman,
-
       days
     });
   } catch (error) {
     console.error(error);
+
     return res.status(500).json({
       message: error.message
     });
