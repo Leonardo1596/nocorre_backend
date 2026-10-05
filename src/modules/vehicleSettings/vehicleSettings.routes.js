@@ -1,8 +1,8 @@
 import { Router } from "express";
 
 import {
-  createOrUpdateVehicleSettings,
-  getVehicleSettings
+  updateVehicleType,
+  getVehicleType
 } from "./vehicleSettings.controller.js";
 
 import { auth } from "../../middlewares/auth.js";
@@ -13,12 +13,12 @@ router.use(auth);
 
 router.put(
   "/",
-  createOrUpdateVehicleSettings
+  updateVehicleType
 );
 
 router.get(
   "/",
-  getVehicleSettings
+  getVehicleType
 );
 
 export default router;
