@@ -221,9 +221,8 @@ export async function updateMaintenanceItem(req, res) {
 
 export async function deleteMaintenanceItem(req, res) {
   try {
-    const {
-      itemId
-    } = req.params;
+    // Pega itemId ou id (garante compatibilidade)
+    const itemId = req.params.itemId || req.params.id;
 
     const settings = await MaintenanceSettings.findOne({
       user: req.userId
@@ -243,10 +242,6 @@ export async function deleteMaintenanceItem(req, res) {
       });
     }
 
-    /**
-     * Itens padrão não podem ser removidos.
-     */
-
     if (item.isDefault) {
       return res.status(400).json({
         message: "Default maintenance items cannot be deleted"
@@ -254,13 +249,11 @@ export async function deleteMaintenanceItem(req, res) {
     }
 
     item.deleteOne();
-
     await settings.save();
 
     return res.json({
       message: "Maintenance item deleted successfully"
     });
-
   } catch (error) {
     return res.status(500).json({
       message: error.message
