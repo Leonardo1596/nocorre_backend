@@ -1,13 +1,21 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+
 import User from "../../models/User.js";
 import MaintenanceSettings from "../../models/MaintenanceSettings.js";
 
 export async function register(req, res) {
   try {
-    const { name, email, password } = req.body;
+    const {
+      name,
+      email,
+      password,
+      vehicleType
+    } = req.body;
 
-    const userAlreadyExists = await User.findOne({ email });
+    const userAlreadyExists = await User.findOne({
+      email
+    });
 
     if (userAlreadyExists) {
       return res.status(400).json({
@@ -15,50 +23,96 @@ export async function register(req, res) {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const selectedVehicleType = vehicleType || "MOTORCYCLE";
+
+    if (!["MOTORCYCLE", "CAR"].includes(selectedVehicleType)) {
+      return res.status(400).json({
+        message: "Invalid vehicle type"
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      password,
+      10
+    );
 
     const user = await User.create({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      vehicleType: selectedVehicleType
     });
+
+    const maintenanceItems =
+      selectedVehicleType === "MOTORCYCLE"
+        ? [
+            {
+              key: "oil",
+              name: "Óleo",
+              price: 0,
+              lifespanKm: 0,
+              isDefault: true
+            },
+            {
+              key: "frontTire",
+              name: "Pneu dianteiro",
+              price: 0,
+              lifespanKm: 0,
+              isDefault: true
+            },
+            {
+              key: "rearTire",
+              name: "Pneu traseiro",
+              price: 0,
+              lifespanKm: 0,
+              isDefault: true
+            },
+            {
+              key: "chain",
+              name: "Kit de transmissão",
+              price: 0,
+              lifespanKm: 0,
+              isDefault: true
+            }
+          ]
+        : [
+            {
+              key: "oil",
+              name: "Óleo",
+              price: 0,
+              lifespanKm: 0,
+              isDefault: true
+            },
+            {
+              key: "tires",
+              name: "Pneus",
+              price: 0,
+              lifespanKm: 0,
+              isDefault: true
+            }
+          ];
 
     await MaintenanceSettings.create({
       user: user._id,
 
       fuel: {
-        kmPerLiter: 30,
+        kmPerLiter:
+          selectedVehicleType === "MOTORCYCLE"
+            ? 30
+            : 10,
+
         fuelPrice: 6.5
       },
 
-      maintenance: {
-        oil: {
-          price: 0,
-          lifespanKm: 0
-        },
-
-        frontTire: {
-          price: 0,
-          lifespanKm: 0
-        },
-
-        rearTire: {
-          price: 0,
-          lifespanKm: 0
-        },
-
-        chain: {
-          price: 0,
-          lifespanKm: 0
-        }
-      }
+      maintenance: maintenanceItems
     });
 
     return res.status(201).json({
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        vehicleType: user.vehicleType
       }
     });
   } catch (error) {
@@ -70,7 +124,10 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const {
+      email,
+      password
+    } = req.body;
 
     const user = await User.findOne({
       email
@@ -109,7 +166,8 @@ export async function login(req, res) {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        vehicleType: user.vehicleType
       }
     });
   } catch (error) {

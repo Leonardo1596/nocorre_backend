@@ -2,43 +2,57 @@ export function calculateCostSnapshot({
   maintenanceSettings
 }) {
   const fuelPrice =
-    maintenanceSettings.fuel.fuelPrice || 0;
+    maintenanceSettings?.fuel?.fuelPrice || 0;
 
   const kmPerLiter =
-    maintenanceSettings.fuel.kmPerLiter || 1;
+    maintenanceSettings?.fuel?.kmPerLiter || 1;
 
   const fuelCostPerKm =
     fuelPrice / kmPerLiter;
 
-  const oilCostPerKm =
-    maintenanceSettings.maintenance.oil.lifespanKm > 0
-      ? maintenanceSettings.maintenance.oil.price /
-        maintenanceSettings.maintenance.oil.lifespanKm
-      : 0;
+  /**
+   * MAINTENANCE
+   *
+   * Cada item possui:
+   *
+   * price
+   * lifespanKm
+   *
+   * O custo por km é:
+   *
+   * price / lifespanKm
+   */
 
-  const frontTireCostPerKm =
-    maintenanceSettings.maintenance.frontTire.lifespanKm > 0
-      ? maintenanceSettings.maintenance.frontTire.price /
-        maintenanceSettings.maintenance.frontTire.lifespanKm
-      : 0;
+  const maintenanceItems =
+    Array.isArray(maintenanceSettings?.maintenance)
+      ? maintenanceSettings.maintenance
+      : [];
 
-  const rearTireCostPerKm =
-    maintenanceSettings.maintenance.rearTire.lifespanKm > 0
-      ? maintenanceSettings.maintenance.rearTire.price /
-        maintenanceSettings.maintenance.rearTire.lifespanKm
-      : 0;
+  const maintenanceCosts = maintenanceItems.map(
+    (item) => {
+      const costPerKm =
+        item.lifespanKm > 0
+          ? item.price / item.lifespanKm
+          : 0;
 
-  const chainKitCostPerKm =
-    maintenanceSettings.maintenance.chain.lifespanKm > 0
-      ? maintenanceSettings.maintenance.chain.price /
-        maintenanceSettings.maintenance.chain.lifespanKm
-      : 0;
+      return {
+        key: item.key,
+        name: item.name,
+        price: item.price || 0,
+        lifespanKm: item.lifespanKm || 0,
+        costPerKm: Number(
+          costPerKm.toFixed(4)
+        )
+      };
+    }
+  );
 
   const maintenanceCostPerKm =
-    oilCostPerKm +
-    frontTireCostPerKm +
-    rearTireCostPerKm +
-    chainKitCostPerKm;
+    maintenanceCosts.reduce(
+      (total, item) =>
+        total + item.costPerKm,
+      0
+    );
 
   const totalCostPerKm =
     fuelCostPerKm + maintenanceCostPerKm;
@@ -47,25 +61,13 @@ export function calculateCostSnapshot({
     fuel: {
       fuelPrice,
       kmPerLiter,
-      costPerKm: Number(fuelCostPerKm.toFixed(4))
+      costPerKm: Number(
+        fuelCostPerKm.toFixed(4)
+      )
     },
 
     maintenance: {
-      oilCostPerKm: Number(
-        oilCostPerKm.toFixed(4)
-      ),
-
-      frontTireCostPerKm: Number(
-        frontTireCostPerKm.toFixed(4)
-      ),
-
-      rearTireCostPerKm: Number(
-        rearTireCostPerKm.toFixed(4)
-      ),
-
-      chainKitCostPerKm: Number(
-        chainKitCostPerKm.toFixed(4)
-      ),
+      items: maintenanceCosts,
 
       totalCostPerKm: Number(
         maintenanceCostPerKm.toFixed(4)

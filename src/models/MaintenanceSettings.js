@@ -1,5 +1,40 @@
 import mongoose from "mongoose";
 
+const maintenanceItemSchema = new mongoose.Schema(
+  {
+    key: {
+      type: String,
+      required: true
+    },
+
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    price: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
+    lifespanKm: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
+    isDefault: {
+      type: Boolean,
+      default: false
+    }
+  },
+  {
+    _id: true
+  }
+);
+
 const maintenanceSettingsSchema = new mongoose.Schema(
   {
     user: {
@@ -12,58 +47,20 @@ const maintenanceSettingsSchema = new mongoose.Schema(
     fuel: {
       kmPerLiter: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
       },
+
       fuelPrice: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
       }
     },
 
     maintenance: {
-      oil: {
-        price: {
-          type: Number,
-          default: 0
-        },
-        lifespanKm: {
-          type: Number,
-          default: 0
-        }
-      },
-
-      frontTire: {
-        price: {
-          type: Number,
-          default: 0
-        },
-        lifespanKm: {
-          type: Number,
-          default: 0
-        }
-      },
-
-      rearTire: {
-        price: {
-          type: Number,
-          default: 0
-        },
-        lifespanKm: {
-          type: Number,
-          default: 0
-        }
-      },
-
-      chain: {
-        price: {
-          type: Number,
-          default: 0
-        },
-        lifespanKm: {
-          type: Number,
-          default: 0
-        }
-      }
+      type: [maintenanceItemSchema],
+      default: []
     }
   },
   {

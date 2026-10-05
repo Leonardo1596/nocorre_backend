@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 
 export function auth(req, res, next) {
-  try {
-    const authHeader = req.headers.authorization;
+  const authHeader = req.headers.authorization;
 
+  try {
     if (!authHeader) {
       return res.status(401).json({
         message: "Token not provided"
@@ -20,8 +20,10 @@ export function auth(req, res, next) {
     req.userId = decoded.userId;
 
     next();
-  } catch {
-    console.log(authHeader)
+
+  } catch (error) {
+    console.log(authHeader);
+
     return res.status(401).json({
       message: "Invalid token"
     });
